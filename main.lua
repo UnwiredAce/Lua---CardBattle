@@ -6,7 +6,8 @@ local cardValues = {
     ["8"] = 8, ["9"] = 9, ["10"] = 10, ["J"] = 11, ["Q"] = 12, ["K"] = 13, ["A"] = 14
 }
 
-local deck = {}
+local redSuit = {}
+local blackSuit = {}
 local cardImages = {}
 local randomCards = {}
 local distance = {}
@@ -31,29 +32,60 @@ end
 function createDeck()
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
-            if not ((suit == "diamonds" or suit == "hearts") and (rank == "A" or rank == "K" or rank == "Q" or rank == "J")) then
+            if (suit == "diamonds" or suit == "hearts") then
                 local cardName = rank .. suit
                 local cardValue = cardValues[rank]
-                table.insert(deck, {name = cardName, value = cardValue})
+                table.insert(redSuit, {name = cardName, value = cardValue})
+            end
+            if (suit == "clubs" or suit == "spades") then
+                local cardName = rank .. suit
+                local cardValue = cardValues[rank]
+                table.insert(blackSuit, {name = cardName, value = cardValue})
             end
         end
     end
 end
 
 function shuffleDeck()
-    for i = #deck, 2, -1 do
+    for i = #blackSuit, 2, -1 do
         local j = math.random(i)
-        deck[i], deck[j] = deck[j], deck[i]
+        blackSuit[i], blackSuit[j] = blackSuit[j], blackSuit[i]
+    end
+
+    for i = #redSuit, 2, -1 do
+        local j = math.random(i)
+        redSuit[i], redSuit[j] = redSuit[j], redSuit[i]
     end
 end
 
-function pickUniqueCards()
-    local xOffset = 150
+function pickRedCards()
+    local xOffset = 75
     local yOffset = 150
-    local spacing = 150
+    local spacing = 100
+    local card
+    for i = 1, 6 do
+        card = table.remove(redSuit)
+        card.x = xOffset
+        card.y = yOffset
+        card.originalX = xOffset
+        card.originalY = yOffset
+        card.width = 105
+        card.height = 150
+        card.xText = card.originalX + 5
+        card.yText = card.originalY - 15
+        table.insert(randomCards, card)
+        xOffset = xOffset + spacing
+        table.remove(card)
+    end
+end
+
+function pickBlackCards()
+    local xOffset = 75
+    local yOffset = 300
+    local spacing = 100
     local card
     for i = 1, 4 do
-        card = table.remove(deck)
+        card = table.remove(blackSuit)
         card.x = xOffset
         card.y = yOffset
         card.originalX = xOffset
@@ -85,7 +117,8 @@ function love.load()
     loadCardImages()
     createDeck()
     shuffleDeck()
-    pickUniqueCards()
+    pickRedCards()
+    pickBlackCards()
 end
 
 function love.update(dt)
