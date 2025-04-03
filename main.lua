@@ -15,7 +15,6 @@ local distance = {}
 
 local canRunAway = false
 local fillHand = false
-local start = true
 
 local draggingCard = nil
 
@@ -129,19 +128,24 @@ end
 
 function runAway()
     canRunAway = false
-    for _, card in ipairs(randomCards) do
-        if card.suit == "diamonds" then
-            table.insert(diamondSuit, table.remove(randomCards))
+
+    for i = #randomCards, 1, -1 do
+        local card = randomCards[i]
+
+        if card.name:find("diamonds") then
+            table.insert(diamondSuit, card)
+        elseif card.name:find("hearts") then
+            table.insert(heartSuit, card)
+        elseif card.name:find("clubs") or card.name:find("spades") then
+            table.insert(blackSuit, card)
         end
-        if card.suit == "hearts" then
-            table.insert(heartSuit, table.remove(randomCards))
-        end
-        if card.suit == "clubs" or card.suit == "spades" then
-            table.insert(blackSuit, table.remove(randomCards))
-        end
-        shuffleDeck()
+        
+        table.remove(randomCards, i)
     end
+
+    shuffleDeck()
     fillHand = true
+
     if fillHand then
         pickRedCards()
         pickBlackCards()
