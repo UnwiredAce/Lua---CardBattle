@@ -6,14 +6,16 @@ local cardValues = {
     ["8"] = 8, ["9"] = 9, ["10"] = 10, ["J"] = 11, ["Q"] = 12, ["K"] = 13, ["A"] = 14
 }
 
-local redSuit = {}
+local diamondSuit = {}
+local heartSuit = {}
 local blackSuit = {}
 local cardImages = {}
 local randomCards = {}
 local distance = {}
 
-local canRunAway = true
+local canRunAway = false
 local fillHand = false
+local start = true
 
 local draggingCard = nil
 
@@ -32,10 +34,15 @@ end
 function createDeck()
     for _, suit in ipairs(suits) do
         for _, rank in ipairs(ranks) do
-            if (suit == "diamonds" or suit == "hearts") then
+            if (suit == "diamonds") then
                 local cardName = rank .. suit
                 local cardValue = cardValues[rank]
-                table.insert(redSuit, {name = cardName, value = cardValue})
+                table.insert(diamondSuit, {name = cardName, value = cardValue})
+            end
+            if (suit == "hearts") then
+                local cardName = rank .. suit
+                local cardValue = cardValues[rank]
+                table.insert(heartSuit, {name = cardName, value = cardValue})
             end
             if (suit == "clubs" or suit == "spades") then
                 local cardName = rank .. suit
@@ -46,15 +53,21 @@ function createDeck()
     end
 end
 
+
 function shuffleDeck()
     for i = #blackSuit, 2, -1 do
         local j = math.random(i)
         blackSuit[i], blackSuit[j] = blackSuit[j], blackSuit[i]
     end
 
-    for i = #redSuit, 2, -1 do
+    for i = #diamondSuit, 2, -1 do
         local j = math.random(i)
-        redSuit[i], redSuit[j] = redSuit[j], redSuit[i]
+        diamondSuit[i], diamondSuit[j] = diamondSuit[j], diamondSuit[i]
+    end
+    
+    for i = #heartSuit, 2, -1 do
+        local j = math.random(i)
+        heartSuit[i], heartSuit[j] = heartSuit[j], heartSuit[i]
     end
 end
 
@@ -63,8 +76,22 @@ function pickRedCards()
     local yOffset = 150
     local spacing = 100
     local card
-    for i = 1, 6 do
-        card = table.remove(redSuit)
+    for i = 1, 4 do
+        card = table.remove(diamondSuit)
+        card.x = xOffset
+        card.y = yOffset
+        card.originalX = xOffset
+        card.originalY = yOffset
+        card.width = 105
+        card.height = 150
+        card.xText = card.originalX + 5
+        card.yText = card.originalY - 15
+        table.insert(randomCards, card)
+        xOffset = xOffset + spacing
+        table.remove(card)
+    end
+    for i = 1, 2 do
+        card = table.remove(heartSuit)
         card.x = xOffset
         card.y = yOffset
         card.originalX = xOffset
@@ -102,13 +129,22 @@ end
 
 function runAway()
     canRunAway = false
-    for i = 1, 4 do
-        table.insert(deck, table.remove(randomCards))
+    for _, card in ipairs(randomCards) do
+        if card.suit == "diamonds" then
+            table.insert(diamondSuit, table.remove(randomCards))
+        end
+        if card.suit == "hearts" then
+            table.insert(heartSuit, table.remove(randomCards))
+        end
+        if card.suit == "clubs" or card.suit == "spades" then
+            table.insert(blackSuit, table.remove(randomCards))
+        end
         shuffleDeck()
     end
     fillHand = true
     if fillHand then
-        pickUniqueCards()
+        pickRedCards()
+        pickBlackCards()
     end
 end
 
@@ -117,8 +153,8 @@ function love.load()
     loadCardImages()
     createDeck()
     shuffleDeck()
-    pickRedCards()
     pickBlackCards()
+    pickRedCards()
 end
 
 function love.update(dt)
@@ -137,7 +173,9 @@ function love.update(dt)
 end
 
 function love.draw()
-    
+    love.graphics.print("Total card: " .. #heartSuit, 10, 10 )
+    love.graphics.print("Total card: " .. #diamondSuit, 10, 20 )
+    love.graphics.print("Total card: " .. #blackSuit, 10, 30)
     local yOffset = 20
     for i, card in ipairs(randomCards) do
         local cardImage = cardImages[card.name]
