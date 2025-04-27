@@ -1,9 +1,9 @@
 local suits = {"hearts", "diamonds", "clubs", "spades"}
-local ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"}
+local ranks = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "A"}--, "J", "Q", "K"}
 
 local cardValues = {
     ["2"] = 2, ["3"] = 3, ["4"] = 4, ["5"] = 5, ["6"] = 6, ["7"] = 7,
-    ["8"] = 8, ["9"] = 9, ["10"] = 10, ["J"] = 11, ["Q"] = 12, ["K"] = 13, ["A"] = 14
+    ["8"] = 8, ["9"] = 9, ["10"] = 10, ["A"] = 14 --,["J"] = 11, ["Q"] = 12, ["K"] = 13
 }
 
 local diamondSuit = {}
@@ -19,6 +19,7 @@ local fillHand = false
 local draggingCard = nil
 
 local offsetX, offsetY = 0, 0
+local life = 20
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 function loadCardImages()
@@ -71,9 +72,9 @@ function shuffleDeck()
 end
 
 function pickRedCards()
-    local xOffset = 75
+    local xOffset = 10
     local yOffset = 150
-    local spacing = 100
+    local spacing = 130
     local card
     for i = 1, 4 do
         card = table.remove(diamondSuit)
@@ -84,7 +85,7 @@ function pickRedCards()
         card.width = 105
         card.height = 150
         card.xText = card.originalX + 5
-        card.yText = card.originalY - 15
+        card.yText = card.originalY - 5
         table.insert(randomCards, card)
         xOffset = xOffset + spacing
         table.remove(card)
@@ -98,7 +99,7 @@ function pickRedCards()
         card.width = 105
         card.height = 150
         card.xText = card.originalX + 5
-        card.yText = card.originalY - 15
+        card.yText = card.originalY - 5
         table.insert(randomCards, card)
         xOffset = xOffset + spacing
         table.remove(card)
@@ -106,9 +107,9 @@ function pickRedCards()
 end
 
 function pickBlackCards()
-    local xOffset = 75
-    local yOffset = 300
-    local spacing = 100
+    local xOffset = 20
+    local yOffset = 400
+    local spacing = 210
     local card
     for i = 1, 4 do
         card = table.remove(blackSuit)
@@ -119,7 +120,7 @@ function pickBlackCards()
         card.width = 105
         card.height = 150
         card.xText = card.originalX + 5
-        card.yText = card.originalY - 15
+        card.yText = card.originalY - 5
         table.insert(randomCards, card)
         xOffset = xOffset + spacing
         table.remove(card)
@@ -177,13 +178,14 @@ function love.update(dt)
 end
 
 function love.draw()
-    love.graphics.print("Total card: " .. #heartSuit, 10, 10 )
-    love.graphics.print("Total card: " .. #diamondSuit, 10, 20 )
-    love.graphics.print("Total card: " .. #blackSuit, 10, 30)
+    love.graphics.print("Total card: " .. #heartSuit, 10, 35 )
+    love.graphics.print("Total card: " .. #diamondSuit, 10, 50 )
+    love.graphics.print("Total card: " .. #blackSuit, 10, 65)
+    love.graphics.print("Life: " .. life, 10, 10)
     local yOffset = 20
     for i, card in ipairs(randomCards) do
         local cardImage = cardImages[card.name]
-        love.graphics.draw(cardImage, card.x, card.y, nil, 3, 3)
+        love.graphics.draw(cardImage, card.x, card.y, nil, 2, 2)
         love.graphics.print(card.value, card.xText, card.yText)
     end
     if draggingCard then
