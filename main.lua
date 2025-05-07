@@ -15,14 +15,16 @@ local opponentHand = {}
 local playertHand = {}
 local distance = {}
 
-local canPick = true
 local fillHand = false
 local dragging = false
+local flipTime = false
 
 local draggingCard = nil
 
 local offsetX, offsetY = 0, 0
 local life = 20
+local timer = 0
+local flipTimer = 3
 love.graphics.setDefaultFilter("nearest", "nearest")
 
 local function loadCardImages()
@@ -95,20 +97,6 @@ local function pickRedCards()
     end
 end
 
-local function pickHearts()
-    local card
-    card = table.remove(heartSuit)
-    card.x = 650
-    card.y = 10
-    card.originalX = card.x
-    card.originalY = card.y
-    card.width = 105
-    card.height = 150
-    card.xText = card.x + 5
-    card.yText = card.y - 5
-    table.insert(selectionHand, card)
-    table.remove(card)
-end
 
 local function pickBlackCards()
     local xOffset = 35
@@ -134,8 +122,8 @@ end
 local function distanceCheck()
     if draggingCard then
         distance = {}
-        for i = 1, #selectionHand do
-            local dist = math.abs(draggingCard.x - selectionHand[i].x)
+        for i = 1, #opponentHand do
+            local dist = math.abs(draggingCard.x - opponentHand[i].x)
             if dist > 0 then
                 distance[i] = dist
             else
@@ -146,43 +134,29 @@ local function distanceCheck()
 end
 
 local function activeDragging()
-    for i, card in ipairs(selectionHand) do
+    for i, card in ipairs(playertHand) do
         if card == draggingCard then
-            table.remove(selectionHand, i)
+            table.remove(playertHand, i)
             break
-        end
-    end
-end
-
-local function addHealth()
-    local heartsCheck = "hearts"
-    if dragging then
-        if draggingCard.y > 400 and draggingCard.name:find(heartsCheck) and life < 20 then
-            life = life + draggingCard.value
-            activeDragging()
         end
     end
 end
 
 local function battle()
     local damage = 0
-    local check = "diamonds"
-    local heartsCheck = "hearts"
     if dragging then
-        for i = 1, #randomCards do
+        for i = 1, #opponentHand do
             if distance[i] <= 10 then
-                if draggingCard.name:find(check) and not randomCards[i].name:find(heartsCheck) and not selectionHand[i].name:find(check) then
-                    if selectionHand[i].value > draggingCard.value then
-                        damage = math.abs(selectionHand[i].value - draggingCard.value)
-                        table.remove(randomCards,i)
-                        activeDragging()
-                    else
-                        table.remove(selectionHand,i)
-                        activeDragging()
-                    end
-                    life = life - damage
-                    damage = 0
+                if opponentHand[i].value > draggingCard.value then
+                    damage = math.abs(opponentHand[i].value - draggingCard.value)
+                    table.remove(opponentHand,i)
+                    activeDragging()
+                else
+                    table.remove(opponentHand,i)
+                    activeDragging()
                 end
+                life = life - damage
+                damage = 0
             end
         end
     end
@@ -194,27 +168,32 @@ function love.load()
     createDeck()
     shuffleDeck()
     pickBlackCards()
-    pickHearts()
     pickRedCards()
 end
 
 function love.update(dt)
+    if not flipTime then
+        timer = timer + dt
+        if timer >= flipTimer then
+            flipTime = true
+        end
+    end
+
     distanceCheck()
     if life > 20 then
         life = 20
     elseif life < 0 then
         life = 0
     end
-    
-    if canPick and love.keyboard.isDown('r') then
-        canPick = false
-
-    end
 
     if draggingCard then
         local mouseX, mouseY = love.mouse.getPosition()
         draggingCard.x = mouseX - offsetX
         draggingCard.y = mouseY - offsetY
+    end
+
+    if #opponentHand == 3 and #playertHand == 3 then
+        fillHand = true
     end
 end
 
@@ -227,18 +206,24 @@ function love.draw()
     love.graphics.print("Life: " .. life, 10, 10)
     local yOffset = 20
     for i, card in ipairs(selectionHand) do
-        local cardImage = cardImages[card.name]
-        love.graphics.draw(cardImage, card.x, card.y, nil, 2, 2)
+        if not flipTime then
+            local cardImage = cardImages[card.name]
+            love.graphics.draw(cardImage, card.x, card.y, nil, 2, 2)
+        else
+            love.graphics.draw(love.graphics.newImage("sprites/cardImages/redBase.png"), card.x, card.y, nil, 2, 2)
+            love.graphics.print(card.value, card.xText, card.yText)
+        end
+        love.graphics.print(card.value, card.xText, card.yText)
     end
-    if #opponentHand == 3 and #playertHand == 3 then
+    if fillHand then
         selectionHand = {}
         for i, card in ipairs(opponentHand) do
-            local cardImage = cardImages[card.name]
-            love.graphics.draw(cardImage, card.x, card.y, nil, 2, 2)
+            love.graphics.draw(love.graphics.newImage("sprites/cardImages/redBase.png"), card.x, card.y, nil, 2, 2)
+            love.graphics.print(card.value, card.xText, card.yText)
         end
         for i, card in ipairs(playertHand) do
-            local cardImage = cardImages[card.name]
-            love.graphics.draw(cardImage, card.x, card.y, nil, 2, 2)
+            love.graphics.draw(love.graphics.newImage("sprites/cardImages/blackBase.png"), card.x, card.y, nil, 2, 2)
+            love.graphics.print(card.value, card.xText, card.yText)
         end
     end
 end
@@ -249,23 +234,31 @@ function love.mousepressed(x, y, button)
         for i, card in ipairs(selectionHand) do
             if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
                 draggingCard = card
-                offsetX = x - card.x
-                offsetY = y - card.y
                 if not card.name:find("diamonds") and #opponentHand < 3 then
                     table.insert(opponentHand, table.remove(selectionHand, i))
+                    opponentHand.cardImages = love.graphics.newImage("sprites/cardImages/blackBase.png")
+                    canPick = false
                 end
                 if  card.name:find("diamonds") and #playertHand < 3 then
                     table.insert(playertHand, table.remove(selectionHand, i))
+                    canPick = false
                 end
                 break
+            end
+        end
+
+        for i, card in ipairs(playertHand) do
+            if x >= card.x and x <= card.x + card.width and y >= card.y and y <= card.y + card.height then
+                draggingCard = card
+                offsetX = x - card.x
+                offsetY = y - card.y
             end
         end
     end
 end
 function love.mousereleased(x, y, button)
     if button == 1 and draggingCard then
-        if not canPick then
-            addHealth()
+        if fillHand then
             battle()
         end
         draggingCard.x = draggingCard.originalX
